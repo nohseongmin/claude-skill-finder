@@ -42,6 +42,17 @@ def test_guards_survive_edits():
 def test_references_resolve():
     for name in re.findall(r"references/([\w-]+\.md)", SKILL):
         assert (ROOT / "references" / name).exists(), name
+    assert "vendor-skills.md" in SKILL, "the catalog stopped being reachable from the skill"
+
+
+def test_catalog_rows_are_well_formed():
+    """Offline half of the catalog check; verify_catalog.py does the network half."""
+    catalog = (ROOT / "references" / "vendor-skills.md").read_text(encoding="utf-8")
+    repos = re.findall(r"https://github\.com/(\S+?)\)", catalog)
+    assert len(repos) > 10, "catalog is suspiciously empty"
+    for repo in repos:
+        assert re.fullmatch(r"[\w.-]+/[\w.-]+", repo), repo
+    assert len(repos) == len(set(repos)), "duplicate row in the catalog"
 
 
 if __name__ == "__main__":

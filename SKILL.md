@@ -24,13 +24,18 @@ Go straight to the work.
 
 ## Stage 1 - local (always, free)
 
-1. `ls ~/.claude/skills/` and `ls ~/.claude/plugins/cache/` - what is installed
-2. Whatever skill-listing tool this harness exposes - what is callable right now
-3. `references/vendor-skills.md` - official skills shipped by the vendor whose
-   stack this task uses
+1. **The project first** - `.claude/skills/` inside the repo being worked on.
+   Project skills shadow user ones and usually encode a team rule, so a hit here
+   outranks everything below it
+2. `ls ~/.claude/skills/` and `ls ~/.claude/plugins/cache/` - user installs
+3. The harness list tools, if it has them - `ListSkills`, `SearchSkills`, `SearchPlugins`
+4. `references/vendor-skills.md` - official skills for the stack this task touches
+
+Reading three directories costs nothing. Do it even when fairly sure.
 
 A hit here **ends the scout**. If the stack appears in the vendor catalog, that
-repo is the answer; no GitHub search needed.
+repo is the answer; no GitHub search needed. A near miss - a skill for the
+adjacent framework - is still a hit: borrow its structure rather than searching on.
 
 ## Stage 2 - live GitHub (only if stage 1 came up empty)
 

@@ -3,11 +3,13 @@
 Skills published by the people who own the stack. These skip the star gate: if the
 task touches one of these, that repo is the reference, and stage 2 is unnecessary.
 
-Verified 2026-09-02. Re-check any row before relying on it:
+Verified 2026-09-03, and re-checked by CI on the first of each month:
 
 ```bash
-gh api repos/<owner>/<name> --jq '"\(.stargazers_count) stars, pushed \(.pushed_at[0:10])"'
+python tools/verify_catalog.py
 ```
+
+It flags any row that is gone, archived, or a year without a commit.
 
 ## Anthropic
 

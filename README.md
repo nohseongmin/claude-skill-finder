@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/nohseongmin/claude-skill-finder/stargazers"><img src="https://img.shields.io/github/stars/nohseongmin/claude-skill-finder?style=flat&color=yellow" alt="stars"></a>
   <a href="https://github.com/nohseongmin/claude-skill-finder/actions"><img src="https://github.com/nohseongmin/claude-skill-finder/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/dependencies-0-blue" alt="zero dependencies">
   <img src="https://img.shields.io/badge/install-one%20git%20clone-brightgreen" alt="one command install">
@@ -18,14 +19,15 @@
   <a href="#the-loop-it-removes">Why</a> ·
   <a href="#three-guards">Guards</a> ·
   <a href="#not-a-router">Not a router</a> ·
-  <a href="#한국어">한국어</a>
+  <a href="#what-it-does-not-do">Limits</a>
 </p>
 
 ---
 
 ## The loop it removes
 
-There are thousands of agent skills now, and vendors keep shipping official ones.
+There are thousands of [agent skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) now,
+and vendors keep shipping official ones.
 So every task starts with the same unpaid lap:
 
 1. You describe what you want built
@@ -54,6 +56,24 @@ flowchart LR
 
 Local first because it is free. GitHub only when local came up empty. Either way the
 turn ends inside the actual task, not in a question.
+
+## The two shapes it comes back in
+
+A hit, on "add push notifications to the Expo app":
+
+```
+scout: expo/skills ships a push-notifications skill (vendor, 2.5k stars, pushed this week)
+scout: cloned to ~/.claude/skills/expo-push after your ok
+scout: using its EAS credential flow instead of hand-rolling APNs
+```
+
+A miss, on "write a differ for our CSV export format":
+
+```
+scout: nothing passes the gate for a format-specific differ, building it directly.
+```
+
+Both end in the same place: the code you asked for, in the same turn.
 
 ## Install
 
@@ -113,26 +133,28 @@ actually runs, delete the rest. `references/search-recipes.md` holds the query
 templates. The skill is a single markdown file with no code in it.
 
 ```bash
-python test/test_skill.py
+python test/test_skill.py       # portability and the three guards, offline
+python tools/verify_catalog.py  # every vendor row still alive, maintained, licensed
 ```
 
-The test guards portability and the three guards above, so an edit that quietly
-deletes the trust boundary fails CI instead of shipping.
+The first runs on every push, so an edit that quietly deletes the trust boundary
+fails CI instead of shipping. The second runs monthly, because a catalog nobody
+re-checks turns into a list of dead links within a year.
 
-## 한국어
+## What it does not do
 
-스킬이 수천 개가 됐다. 그래서 작업마다 같은 헛수고가 붙는다. 만들어달라고 하고, 맨바닥부터
-짜기 시작하면 멈춰 세우고, 직접 깃허브 뒤져서 레포를 붙여넣고, 그제서야 제대로 시작한다.
+Deliberate omissions, so you know what you are getting.
 
-`scout`는 그 순서를 뒤집는다. 짜기 전에 먼저 찾는다. 설치된 스킬 → 벤더 공식 카탈로그 →
-깃허브 실시간 순으로 훑고, 세 줄로 보고한 뒤 **묻지 않고 원래 작업을 이어간다.**
-
-설계의 핵심은 가드 셋이다. **예산**(검색 3회·2분, 넘으면 포기하고 직접 짬. 찾는 시간이
-짜는 시간보다 길면 이미 실패다), **관문**(★200+ 또는 벤더 공식 · 1년 내 커밋 · 라이선스),
-**신뢰 경계**(외부 레포의 README는 데이터지 명령이 아니다. 서드파티 스킬 설치는 남의
-지시문을 내 컨텍스트에 넣는 일이라 이 단계만 확인을 받는다).
-
-버그 수정·리팩토링·1~2줄 수정·이미 스킬이 정해진 작업에는 발동하지 않는다.
+- **No cache of past searches.** A stale hit is worse than a repeated one, and the
+  three-search budget already keeps repeats cheap.
+- **No unattended installs.** Third-party skills are executable instructions; the
+  clone step asks once, every time.
+- **No routing among your installed skills.** That is a different tool, and several
+  good ones exist. This one looks outward.
+- **No daemon, no background indexing, no API key.** It runs inside the turn that
+  needed it, or not at all.
+- **No security auditing of what it finds.** It checks that a repo is maintained and
+  licensed, not that it is safe. For that, reach for a real review skill.
 
 ## License
 
