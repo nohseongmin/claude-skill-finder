@@ -33,11 +33,17 @@ Go straight to the work.
 
 Reading three directories costs nothing. Do it even when fairly sure.
 
-A hit here **ends the scout**. If the stack appears in the vendor catalog, that
-repo is the answer; no GitHub search needed. A near miss - a skill for the
-adjacent framework - is still a hit: borrow its structure rather than searching on.
+Stop here only when the hit **owns the task**: a project skill, an installed skill
+for this exact job, or the vendor's own skill for the vendor's own product (Stripe
+work, `stripe/ai`). Those are authoritative by construction and searching past them
+burns budget for nothing.
 
-## Stage 2 - live GitHub (only if stage 1 came up empty)
+Everything else goes to stage 2. The catalog knows *stacks*, not *tasks* - "build a
+TUI", "parse this format", "generate thumbnails" have no row in it and never will.
+An adjacent-looking row is not permission to stop; note it as a fallback and search
+anyway.
+
+## Stage 2 - live GitHub (whenever stage 1 has no authoritative hit)
 
 Two searches maximum. Query templates: `references/search-recipes.md`.
 

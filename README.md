@@ -46,16 +46,20 @@ flowchart LR
     B -- no --> C["installed skills<br/>and plugins"]
     C -- hit --> Y["invoke it"]
     C -- miss --> D["vendor catalog"]
-    D -- hit --> Y
-    D -- miss --> E["live GitHub<br/>2 searches"]
+    D -- vendor owns it --> Y
+    D -- partial or miss --> E["live GitHub<br/>2 searches"]
     E -- passes gate --> Y
     E -- nothing --> Z
     Y --> F["3 line report,<br/>keep working"]
     Z --> F
 ```
 
-Local first because it is free. GitHub only when local came up empty. Either way the
-turn ends inside the actual task, not in a question.
+Local first because it is free, and because a vendor's own skill for a vendor's own
+product cannot be beaten by a search. Anything short of that - a catalog row that
+only looks adjacent, a task the catalog has no concept of - falls through to a live
+search. The catalog is a cache of authoritative answers, not the answer set.
+
+Either way the turn ends inside the actual task, not in a question.
 
 ## The two shapes it comes back in
 
