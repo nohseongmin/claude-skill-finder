@@ -1,4 +1,4 @@
-"""Ping every repo in the vendor catalog. A catalog of dead links is worse than none.
+"""Ping every repo this skill points at. A catalog of dead links is worse than none.
 
     python tools/verify_catalog.py
 
@@ -13,13 +13,14 @@ import sys
 import urllib.error
 import urllib.request
 
-CATALOG = pathlib.Path(__file__).resolve().parent.parent / "references" / "vendor-skills.md"
+REFERENCES = pathlib.Path(__file__).resolve().parent.parent / "references"
 STALE_AFTER_DAYS = 365
 
 
 def repos():
-    text = CATALOG.read_text(encoding="utf-8")
-    found = re.findall(r"https://github\.com/([\w.-]+/[\w.-]+)", text)
+    found = []
+    for path in sorted(REFERENCES.glob("*.md")):
+        found += re.findall(r"https://github\.com/([\w.-]+/[\w.-]+)", path.read_text(encoding="utf-8"))
     return sorted(set(found))
 
 

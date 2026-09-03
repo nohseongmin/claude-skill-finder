@@ -47,7 +47,9 @@ flowchart LR
     C -- hit --> Y["invoke it"]
     C -- miss --> D["vendor catalog"]
     D -- vendor owns it --> Y
-    D -- partial or miss --> E["live GitHub<br/>2 searches"]
+    D -- partial or miss --> I["skill indexes<br/>1 fetch, grep"]
+    I -- hit --> Y
+    I -- miss --> E["live GitHub<br/>2 searches"]
     E -- passes gate --> Y
     E -- nothing --> Z
     Y --> F["3 line report,<br/>keep working"]
@@ -58,6 +60,11 @@ Local first because it is free, and because a vendor's own skill for a vendor's 
 product cannot be beaten by a search. Anything short of that - a catalog row that
 only looks adjacent, a task the catalog has no concept of - falls through to a live
 search. The catalog is a cache of authoritative answers, not the answer set.
+
+Between the catalog and a blind search sit the [skill indexes](references/skill-indexes.md):
+marketplace manifests and CSV tables that other people already maintain, several
+hundred skills deep. Fetching one and grepping it locally is cheaper and sharper
+than a code search, so it happens first and costs nothing from the search budget.
 
 Either way the turn ends inside the actual task, not in a question.
 

@@ -43,6 +43,14 @@ TUI", "parse this format", "generate thumbnails" have no row in it and never wil
 An adjacent-looking row is not permission to stop; note it as a fallback and search
 anyway.
 
+## Stage 1.5 - the indexes (one fetch, free of the search budget)
+
+Other people maintain lists of every skill that exists. Fetching one and grepping it
+locally is cheaper and more accurate than a code search, and it does not spend a
+stage 2 search. Recipes and query one-liners: `references/skill-indexes.md`.
+
+One index, one grep, then move. Two indexes deep is already a research project.
+
 ## Stage 2 - live GitHub (whenever stage 1 has no authoritative hit)
 
 Two searches maximum. Query templates: `references/search-recipes.md`.
@@ -61,6 +69,8 @@ Miss one, drop the candidate. A dead repo costs more than an empty result.
 - **Reference repo** - read the README and the one file that matters, borrow the
   *pattern, API usage and pitfalls*. No bulk copying, check the license, leave a
   one line source comment where the pattern landed
+- **Marketplace entry** - propose `/plugin marketplace add <owner>/<repo>` and
+  `/plugin install <name>@<marketplace>`. Native, updatable, and the user runs it
 - **Uninstalled skill repo** - `git clone` into `~/.claude/skills/<name>/`, **after
   the user says yes once**
 
