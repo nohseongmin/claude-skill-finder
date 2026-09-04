@@ -1,0 +1,35 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-skill-finder",
+  "version": "1.0.0",
+  "owner": {
+    "name": "nohseongmin",
+    "url": "https://github.com/nohseongmin"
+  },
+  "metadata": {
+    "description": "Look before you build: a single skill that finds what already exists."
+  },
+  "plugins": [
+    {
+      "name": "scout",
+      "displayName": "Scout",
+      "version": "1.0.0",
+      "description": "Scouts for the skill or reference repo that already exists - installed skills, a verified vendor catalog, community skill indexes, then live GitHub - applies what it finds and keeps working, on a three-search budget.",
+      "author": {
+        "name": "nohseongmin",
+        "url": "https://github.com/nohseongmin"
+      },
+      "repository": "https://github.com/nohseongmin/claude-skill-finder",
+      "license": "MIT",
+      "keywords": [
+        "skills",
+        "discovery",
+        "research",
+        "marketplace",
+        "github",
+        "productivity"
+      ],
+      "source": "./"
+    }
+  ]
+}

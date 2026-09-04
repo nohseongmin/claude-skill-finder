@@ -88,15 +88,25 @@ Both end in the same place: the code you asked for, in the same turn.
 
 ## Install
 
+As a plugin, which updates itself and works on every platform:
+
+```
+/plugin marketplace add nohseongmin/claude-skill-finder
+/plugin install scout@claude-skill-finder
+```
+
+Or as a plain skill, if you keep your skills in one directory:
+
 ```bash
 git clone https://github.com/nohseongmin/claude-skill-finder ~/.claude/skills/scout
 ```
 
-Windows PowerShell:
-
 ```powershell
 git clone https://github.com/nohseongmin/claude-skill-finder "$env:USERPROFILE/.claude/skills/scout"
 ```
+
+Requires [Claude Code](https://code.claude.com/docs). Python 3.10+ only if you run the
+catalog verifier; the skill itself is markdown and needs nothing.
 
 That is the whole setup. No config, no keys, no dependencies. It triggers itself on
 build requests in English or Korean; `/scout` forces it.
@@ -152,6 +162,19 @@ The first runs on every push, so an edit that quietly deletes the trust boundary
 fails CI instead of shipping. The second runs monthly, because a catalog nobody
 re-checks turns into a list of dead links within a year.
 
+## What is in the repo
+
+```
+SKILL.md                      the skill, and the whole product
+references/vendor-skills.md   17 vendor-published skills, verified
+references/skill-indexes.md   community indexes and how to query them
+references/search-recipes.md  GitHub query templates and the judging one-liner
+tools/verify_catalog.py       liveness check, no dependencies, no token
+test/test_skill.py            offline guard against edits that gut the skill
+```
+
+To remove it: `rm -rf ~/.claude/skills/scout`, or `/plugin uninstall scout@claude-skill-finder`.
+
 ## What it does not do
 
 Deliberate omissions, so you know what you are getting.
@@ -169,4 +192,6 @@ Deliberate omissions, so you know what you are getting.
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE). The catalogs link to other people's repositories and copy
+nothing out of them; each of those keeps its own license, and
+[CONTRIBUTING.md](CONTRIBUTING.md) covers adding a row.

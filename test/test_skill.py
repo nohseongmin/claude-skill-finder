@@ -1,4 +1,5 @@
 """One check: the skill file stays installable and stays honest."""
+import json
 import pathlib
 import re
 
@@ -44,6 +45,17 @@ def test_references_resolve():
         assert (ROOT / "references" / name).exists(), name
     for required in ("vendor-skills.md", "skill-indexes.md", "search-recipes.md"):
         assert required in SKILL, f"{required} stopped being reachable from the skill"
+
+
+def test_plugin_manifests_match_the_skill():
+    """A renamed plugin silently changes how the skill is invoked after an update."""
+    plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    assert plugin["name"] == frontmatter()["name"], "plugin name drifted from the skill name"
+    listed = market["plugins"][0]
+    assert listed["name"] == plugin["name"], "marketplace entry drifted from the plugin"
+    assert listed["source"] == "./", "the plugin is this repo root; SKILL.md must stay there"
+    assert not (ROOT / "skills").exists(), "a skills/ directory disables the root SKILL.md"
 
 
 def test_catalog_rows_are_well_formed():
