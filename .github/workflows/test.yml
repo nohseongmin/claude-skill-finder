@@ -25,3 +25,5 @@ jobs:
         with:
           python-version: "3.12"
       - run: python tools/verify_catalog.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

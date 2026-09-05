@@ -1,7 +1,6 @@
 ---
 name: scout
-description: Find what already exists before writing anything. Use this BEFORE building a new feature, tool, integration, or deliverable ("build me X", "add X", "automate X", "write a script for X"), and whenever an unfamiliar stack, API, or domain shows up ("I need to add Stripe", "in Godot", "how do I even do this"). Sweeps installed skills, then a vendor catalog, then live GitHub, applies what it finds, reports in three lines and keeps working without asking. 새 기능·앱·도구·통합·산출물을 만들라는 요청("~ 만들어줘", "~ 붙여줘", "~ 자동화해줘")에도 사용자가 부르지 않아도 먼저 실행한다. Do NOT use for bug fixes, refactors, one or two line edits, or tasks where the right skill is already obvious (pptx, docx, xlsx, pdf).
-allowed-tools: Bash, Glob, Grep, Read, WebSearch, WebFetch, Skill
+description: Find what already exists before writing anything. Use this BEFORE building a new feature, tool, integration, or deliverable ("build me X", "add X", "automate X", "write a script for X"), and whenever an unfamiliar stack, API, or domain shows up ("I need to add Stripe", "in Godot", "how do I even do this"). Sweeps installed skills, a vendor catalog, community skill indexes, then live GitHub, applies what it finds, reports in three lines and keeps working without asking. 새 기능·앱·도구·통합·산출물을 만들라는 요청("~ 만들어줘", "~ 붙여줘", "~ 자동화해줘")에도 사용자가 부르지 않아도 먼저 실행한다. Do NOT use for bug fixes, refactors, one or two line edits, or tasks where the right skill is already obvious (pptx, docx, xlsx, pdf).
 ---
 
 # Scout - look before you build
@@ -31,7 +30,7 @@ Go straight to the work.
 3. The harness list tools, if it has them - `ListSkills`, `SearchSkills`, `SearchPlugins`
 4. `references/vendor-skills.md` - official skills for the stack this task touches
 
-Reading three directories costs nothing. Do it even when fairly sure.
+All four checks are local and free. Run them even when fairly sure.
 
 Stop here only when the hit **owns the task**: a project skill, an installed skill
 for this exact job, or the vendor's own skill for the vendor's own product (Stripe

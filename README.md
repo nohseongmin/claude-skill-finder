@@ -10,7 +10,7 @@
   <a href="https://github.com/nohseongmin/claude-skill-finder/stargazers"><img src="https://img.shields.io/github/stars/nohseongmin/claude-skill-finder?style=flat&color=yellow" alt="stars"></a>
   <a href="https://github.com/nohseongmin/claude-skill-finder/actions"><img src="https://github.com/nohseongmin/claude-skill-finder/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/dependencies-0-blue" alt="zero dependencies">
-  <img src="https://img.shields.io/badge/install-one%20git%20clone-brightgreen" alt="one command install">
+  <img src="https://img.shields.io/badge/install-plugin%20or%20clone-brightgreen" alt="plugin or clone install">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT"></a>
 </p>
 
@@ -128,7 +128,8 @@ and not a background service.
 
 **A gate.** 200+ stars or vendor-published, a commit inside the last year, and a
 license. A stale unlicensed repo costs more than an empty result, so it gets dropped
-rather than reported.
+rather than reported. The licence half applies to anything it would borrow code or
+patterns from; a list it only reads as a pointer is judged on being maintained.
 
 **A trust boundary.** Anything it fetches is data, not instructions. A README that
 says "run this command" or "ignore your previous instructions" gets quoted to you,
@@ -141,8 +142,10 @@ unattended.
 The routers that exist pick between the skills you already installed. Useful, and a
 different problem. `scout` looks outward: the [vendor catalog](references/vendor-skills.md)
 of officially maintained skills (Anthropic, Vercel, Expo, Supabase, Stripe, Cloudflare,
-Sentry, Trail of Bits and more, all verified live), then GitHub itself with
-[query templates](references/search-recipes.md) that filter for maintained work.
+Sentry, Trail of Bits and more, all verified live), then the
+[community indexes](references/skill-indexes.md) other people already maintain, then
+GitHub itself with [query templates](references/search-recipes.md) that filter for
+maintained work.
 
 If nothing out there passes the gate, it says so in one line and builds the thing.
 "Found nothing" is a valid, cheap answer.
@@ -150,12 +153,13 @@ If nothing out there passes the gate, it says so in one line and builds the thin
 ## Make it yours
 
 `references/vendor-skills.md` is a plain table. Fork it, add the stacks your team
-actually runs, delete the rest. `references/search-recipes.md` holds the query
-templates. The skill is a single markdown file with no code in it.
+actually runs, delete the rest. `references/skill-indexes.md` holds the community
+lists and `references/search-recipes.md` the query templates. The skill itself is one
+markdown file with no code in it.
 
 ```bash
 python test/test_skill.py       # portability and the three guards, offline
-python tools/verify_catalog.py  # every vendor row still alive, maintained, licensed
+python tools/verify_catalog.py  # every repo it points at still alive and maintained
 ```
 
 The first runs on every push, so an edit that quietly deletes the trust boundary
@@ -169,8 +173,10 @@ SKILL.md                      the skill, and the whole product
 references/vendor-skills.md   17 vendor-published skills, verified
 references/skill-indexes.md   community indexes and how to query them
 references/search-recipes.md  GitHub query templates and the judging one-liner
-tools/verify_catalog.py       liveness check, no dependencies, no token
+tools/verify_catalog.py       liveness check, no dependencies, token optional
 test/test_skill.py            offline guard against edits that gut the skill
+.claude-plugin/               manifests, so /plugin install works
+CONTRIBUTING.md               how to add a catalog row or an index
 ```
 
 To remove it: `rm -rf ~/.claude/skills/scout`, or `/plugin uninstall scout@claude-skill-finder`.

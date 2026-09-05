@@ -3,10 +3,12 @@
     python tools/verify_catalog.py
 
 Exits non-zero if a row is gone, archived, or has not been touched in a year.
-Unauthenticated GitHub API: 60 calls/hour, and the catalog is far smaller than that.
+Unauthenticated GitHub API allows 60 calls/hour, which covers the catalog. Set
+GITHUB_TOKEN to raise that when a shared IP has already spent the quota.
 """
 import datetime
 import json
+import os
 import pathlib
 import re
 import sys
@@ -25,10 +27,11 @@ def repos():
 
 
 def fetch(repo):
-    request = urllib.request.Request(
-        f"https://api.github.com/repos/{repo}",
-        headers={"Accept": "application/vnd.github+json", "User-Agent": "claude-skill-finder"},
-    )
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "claude-skill-finder"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(f"https://api.github.com/repos/{repo}", headers=headers)
     with urllib.request.urlopen(request, timeout=15) as response:
         return json.load(response)
 
@@ -40,6 +43,13 @@ def main():
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:
+            if error.code in (403, 429):
+                # Rate limited, not dead. Reporting these as dead rows would be a lie.
+                print(
+                    f"gave up at {repo}: GitHub rate limit. Set GITHUB_TOKEN and rerun.",
+                    file=sys.stderr,
+                )
+                return 2
             problems.append(f"{repo}: HTTP {error.code}")
             print(f"DEAD  {repo} (HTTP {error.code})")
             continue
