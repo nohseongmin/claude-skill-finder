@@ -2,7 +2,8 @@
 
     python tools/verify_catalog.py
 
-Exits non-zero if a row is gone, archived, or has not been touched in a year.
+Exits non-zero if a row is gone, archived, has not been touched in a year, or -
+for the vendor catalog, whose gate requires one - has no license.
 Unauthenticated GitHub API allows 60 calls/hour, which covers the catalog. Set
 GITHUB_TOKEN to raise that when a shared IP has already spent the quota.
 """
@@ -16,14 +17,18 @@ import urllib.error
 import urllib.request
 
 REFERENCES = pathlib.Path(__file__).resolve().parent.parent / "references"
+VENDOR_CATALOG = REFERENCES / "vendor-skills.md"
 STALE_AFTER_DAYS = 365
 
 
 def repos():
-    found = []
+    """(repo, needs_license) pairs. Only the vendor catalog's gate requires a license -
+    skill-indexes.md documents pointer-only entries that are read, never copied from."""
+    found = {}
     for path in sorted(REFERENCES.glob("*.md")):
-        found += re.findall(r"https://github\.com/([\w.-]+/[\w.-]+)", path.read_text(encoding="utf-8"))
-    return sorted(set(found))
+        for repo in re.findall(r"https://github\.com/([\w.-]+/[\w.-]+)", path.read_text(encoding="utf-8")):
+            found[repo] = found.get(repo, False) or path == VENDOR_CATALOG
+    return sorted(found.items())
 
 
 def fetch(repo):
@@ -39,7 +44,7 @@ def fetch(repo):
 def main():
     today = datetime.date.today()
     problems = []
-    for repo in repos():
+    for repo, needs_license in repos():
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:
@@ -62,6 +67,9 @@ def main():
         elif age > STALE_AFTER_DAYS:
             problems.append(f"{repo}: {age} days since last push")
             print(f"STALE {repo} ({note})")
+        elif needs_license and not data.get("license"):
+            problems.append(f"{repo}: no license file")
+            print(f"UNLIC {repo} ({note}, no license)")
         else:
             print(f"ok    {repo} ({note})")
     if problems:

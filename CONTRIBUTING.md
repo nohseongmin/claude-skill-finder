@@ -14,7 +14,7 @@ Before opening a PR:
 python tools/verify_catalog.py
 ```
 
-It refuses rows that are gone, archived, or a year without a commit.
+It refuses rows that are gone, archived, a year without a commit, or missing a license.
 
 ## Adding a skill index
 
