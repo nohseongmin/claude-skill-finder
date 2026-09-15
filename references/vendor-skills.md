@@ -9,7 +9,7 @@ Verified 2026-09-03, and re-checked by CI on the first of each month:
 python tools/verify_catalog.py
 ```
 
-It flags any row that is gone, archived, or a year without a commit.
+It flags any row that is gone, archived, a year without a commit, or missing a license.
 
 ## Anthropic
 
