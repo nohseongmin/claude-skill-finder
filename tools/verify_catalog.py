@@ -58,6 +58,12 @@ def main():
             problems.append(f"{repo}: HTTP {error.code}")
             print(f"DEAD  {repo} (HTTP {error.code})")
             continue
+        except urllib.error.URLError as error:
+            # DNS failure, timeout, connection refused - a network hiccup on one repo,
+            # not proof it's dead. Report it and keep checking the rest of the catalog.
+            problems.append(f"{repo}: {error.reason}")
+            print(f"ERROR {repo} ({error.reason})")
+            continue
         pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
         age = (today - pushed).days
         note = f"{data['stargazers_count']} stars, pushed {pushed}"
