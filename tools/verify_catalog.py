@@ -64,6 +64,10 @@ def main():
             problems.append(f"{repo}: {error.reason}")
             print(f"ERROR {repo} ({error.reason})")
             continue
+        except TimeoutError:
+            problems.append(f"{repo}: timed out")
+            print(f"ERROR {repo} (timed out)")
+            continue
         pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
         age = (today - pushed).days
         note = f"{data['stargazers_count']} stars, pushed {pushed}"

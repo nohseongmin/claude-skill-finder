@@ -1,9 +1,16 @@
 """One check: the skill file stays installable and stays honest."""
+import contextlib
+import io
 import json
 import pathlib
 import re
+import sys
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+import verify_catalog
+
 SKILL = (ROOT / "SKILL.md").read_text(encoding="utf-8")
 
 
@@ -66,6 +73,29 @@ def test_catalog_rows_are_well_formed():
     for repo in repos:
         assert re.fullmatch(r"[\w.-]+/[\w.-]+", repo), repo
     assert len(repos) == len(set(repos)), "duplicate row in the catalog"
+
+
+def test_catalog_continues_after_timeout():
+    """A response read timeout must not prevent checking the remaining rows."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/slow", True), ("example/healthy", True),
+    ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+        TimeoutError("timed out"), healthy,
+    ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "a timeout must fail the catalog check"
+    assert fetch.call_args_list == [mock.call("example/slow"), mock.call("example/healthy")]
+    assert "ERROR example/slow (timed out)" in output.getvalue()
+    assert "ok    example/healthy" in output.getvalue()
+    assert "DEAD" not in output.getvalue(), "a timeout is not proof a repo is dead"
+    assert "1 row(s) need attention" in errors.getvalue()
 
 
 if __name__ == "__main__":
