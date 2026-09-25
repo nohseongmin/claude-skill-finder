@@ -44,7 +44,11 @@ def fetch(repo):
 def main():
     today = datetime.date.today()
     problems = []
-    for repo, needs_license in repos():
+    catalog = repos()
+    if not catalog:
+        print("No repositories found in the references; catalog check failed.", file=sys.stderr)
+        return 1
+    for repo, needs_license in catalog:
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:

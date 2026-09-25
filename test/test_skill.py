@@ -75,6 +75,18 @@ def test_catalog_rows_are_well_formed():
     assert len(repos) == len(set(repos)), "duplicate row in the catalog"
 
 
+def test_catalog_rejects_empty_references():
+    """An empty catalog must not pass without checking any repositories."""
+    errors = io.StringIO()
+    with mock.patch.object(verify_catalog, "repos", return_value=[]), \
+            mock.patch.object(verify_catalog, "fetch") as fetch, \
+            contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "an empty catalog must fail the catalog check"
+    fetch.assert_not_called()
+    assert "No repositories found" in errors.getvalue()
+
+
 def test_catalog_continues_after_timeout():
     """A response read timeout must not prevent checking the remaining rows."""
     output = io.StringIO()
