@@ -110,6 +110,28 @@ def test_catalog_continues_after_timeout():
     assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_empty_repository():
+    """A repository without commits must fail cleanly without hiding later rows."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/empty", True), ("example/healthy", True),
+    ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+        {"pushed_at": None}, healthy,
+    ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "an empty repository must fail the catalog check"
+    assert fetch.call_args_list == [mock.call("example/empty"), mock.call("example/healthy")]
+    assert "STALE example/empty (no commits)" in output.getvalue()
+    assert "ok    example/healthy" in output.getvalue()
+    assert "1 row(s) need attention" in errors.getvalue()
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
