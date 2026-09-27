@@ -72,6 +72,10 @@ def main():
             problems.append(f"{repo}: timed out")
             print(f"ERROR {repo} (timed out)")
             continue
+        if not data.get("pushed_at"):
+            problems.append(f"{repo}: no commits")
+            print(f"STALE {repo} (no commits)")
+            continue
         pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
         age = (today - pushed).days
         note = f"{data['stargazers_count']} stars, pushed {pushed}"
