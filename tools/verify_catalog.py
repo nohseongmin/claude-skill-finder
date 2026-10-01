@@ -52,7 +52,14 @@ def main():
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:
-            if error.code in (403, 429):
+            headers = error.headers or {}
+            is_rate_limited = (
+                error.code == 429
+                or headers.get("X-RateLimit-Remaining") == "0"
+                or headers.get("Retry-After") is not None
+                or (error.fp is not None and b"secondary rate limit" in error.read().lower())
+            )
+            if is_rate_limited:
                 # Rate limited, not dead. Reporting these as dead rows would be a lie.
                 print(
                     f"gave up at {repo}: GitHub rate limit. Set GITHUB_TOKEN and rerun.",

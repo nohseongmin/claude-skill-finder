@@ -5,6 +5,7 @@ import json
 import pathlib
 import re
 import sys
+import urllib.error
 from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -108,6 +109,35 @@ def test_catalog_continues_after_timeout():
     assert "ok    example/healthy" in output.getvalue()
     assert "DEAD" not in output.getvalue(), "a timeout is not proof a repo is dead"
     assert "1 row(s) need attention" in errors.getvalue()
+
+
+def test_catalog_does_not_mistake_forbidden_for_rate_limit():
+    """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    forbidden = urllib.error.HTTPError(
+        "https://api.github.com/repos/example/forbidden",
+        403,
+        "Forbidden",
+        {"X-RateLimit-Remaining": "1"},
+        None,
+    )
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/forbidden", True), ("example/healthy", True),
+    ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+        forbidden, healthy,
+    ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "an inaccessible catalog row must fail the catalog check"
+    assert fetch.call_args_list == [mock.call("example/forbidden"), mock.call("example/healthy")]
+    assert "DEAD  example/forbidden (HTTP 403)" in output.getvalue()
+    assert "ok    example/healthy" in output.getvalue()
+    assert "GitHub rate limit" not in errors.getvalue()
 
 
 def test_catalog_continues_after_empty_repository():
