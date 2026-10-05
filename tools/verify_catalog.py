@@ -79,6 +79,10 @@ def main():
             problems.append(f"{repo}: timed out")
             print(f"ERROR {repo} (timed out)")
             continue
+        except json.JSONDecodeError:
+            problems.append(f"{repo}: invalid JSON response")
+            print(f"ERROR {repo} (invalid JSON response)")
+            continue
         if not data.get("pushed_at"):
             problems.append(f"{repo}: no commits")
             print(f"STALE {repo} (no commits)")
