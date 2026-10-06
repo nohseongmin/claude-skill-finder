@@ -134,6 +134,31 @@ def test_catalog_continues_after_invalid_json():
     assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_non_object_json():
+    """Valid JSON must still describe an object before reading repository fields."""
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    for payload in (None, [], [1], "unexpected", 1, True):
+        output = io.StringIO()
+        errors = io.StringIO()
+        with mock.patch.object(verify_catalog, "repos", return_value=[
+            ("example/invalid", True), ("example/healthy", True),
+        ]), mock.patch.object(verify_catalog.urllib.request, "urlopen", side_effect=[
+            io.BytesIO(json.dumps(payload).encode("utf-8")),
+            io.BytesIO(json.dumps(healthy).encode("utf-8")),
+        ]) as urlopen, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            result = verify_catalog.main()
+        assert result == 1, "a non-object response must fail the catalog check"
+        assert urlopen.call_count == 2, "the remaining rows must still be checked"
+        assert "ERROR example/invalid (invalid repository response)" in output.getvalue()
+        assert "ok    example/healthy" in output.getvalue()
+        assert "DEAD" not in output.getvalue(), "a non-object response is not proof a repo is dead"
+        assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()
