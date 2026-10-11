@@ -79,7 +79,7 @@ def main():
             problems.append(f"{repo}: timed out")
             print(f"ERROR {repo} (timed out)")
             continue
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             problems.append(f"{repo}: invalid JSON response")
             print(f"ERROR {repo} (invalid JSON response)")
             continue
