@@ -91,7 +91,12 @@ def main():
             problems.append(f"{repo}: no commits")
             print(f"STALE {repo} (no commits)")
             continue
-        pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
+        try:
+            pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
+        except (TypeError, ValueError):
+            problems.append(f"{repo}: invalid push date")
+            print(f"ERROR {repo} (invalid push date)")
+            continue
         age = (today - pushed).days
         note = f"{data['stargazers_count']} stars, pushed {pushed}"
         if data.get("archived"):
