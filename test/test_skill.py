@@ -182,6 +182,30 @@ def test_catalog_continues_after_non_object_json():
         assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_invalid_push_date():
+    """An invalid push date must not prevent checking the remaining rows."""
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    for pushed_at in ("not a date", "2026-02-30T00:00:00Z", 1, ["2026-01-01"]):
+        output = io.StringIO()
+        errors = io.StringIO()
+        with mock.patch.object(verify_catalog, "repos", return_value=[
+            ("example/invalid", True), ("example/healthy", True),
+        ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+            {"pushed_at": pushed_at}, healthy,
+        ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            result = verify_catalog.main()
+        assert result == 1, "an invalid push date must fail the catalog check"
+        assert fetch.call_args_list == [mock.call("example/invalid"), mock.call("example/healthy")]
+        assert "ERROR example/invalid (invalid push date)" in output.getvalue()
+        assert "ok    example/healthy" in output.getvalue()
+        assert "DEAD" not in output.getvalue(), "an invalid date is not proof a repo is dead"
+        assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()
