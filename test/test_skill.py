@@ -206,6 +206,35 @@ def test_catalog_continues_after_invalid_push_date():
         assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_invalid_star_count():
+    """Missing or invalid star counts must not prevent checking the remaining rows."""
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 0,
+        "license": {"spdx_id": "MIT"},
+    }
+    for fields in (
+        {}, {"stargazers_count": None}, {"stargazers_count": -1},
+        {"stargazers_count": "200"}, {"stargazers_count": 1.5},
+        {"stargazers_count": True}, {"stargazers_count": False},
+        {"stargazers_count": []}, {"stargazers_count": {}},
+    ):
+        output = io.StringIO()
+        errors = io.StringIO()
+        with mock.patch.object(verify_catalog, "repos", return_value=[
+            ("example/invalid", True), ("example/healthy", True),
+        ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+            {"pushed_at": healthy["pushed_at"], **fields}, healthy,
+        ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            result = verify_catalog.main()
+        assert result == 1, "an invalid star count must fail the catalog check"
+        assert fetch.call_args_list == [mock.call("example/invalid"), mock.call("example/healthy")]
+        assert "ERROR example/invalid (invalid star count)" in output.getvalue()
+        assert "ok    example/healthy (0 stars" in output.getvalue()
+        assert "DEAD" not in output.getvalue(), "an invalid count is not proof a repo is dead"
+        assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()

@@ -98,7 +98,12 @@ def main():
             print(f"ERROR {repo} (invalid push date)")
             continue
         age = (today - pushed).days
-        note = f"{data['stargazers_count']} stars, pushed {pushed}"
+        stars = data.get("stargazers_count")
+        if type(stars) is not int or stars < 0:
+            problems.append(f"{repo}: invalid star count")
+            print(f"ERROR {repo} (invalid star count)")
+            continue
+        note = f"{stars} stars, pushed {pushed}"
         if data.get("archived"):
             problems.append(f"{repo}: archived")
             print(f"STALE {repo} ({note}, archived)")
