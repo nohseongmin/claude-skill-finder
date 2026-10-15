@@ -189,7 +189,9 @@ def test_catalog_continues_after_invalid_push_date():
         "stargazers_count": 200,
         "license": {"spdx_id": "MIT"},
     }
-    for pushed_at in ("not a date", "2026-02-30T00:00:00Z", 1, ["2026-01-01"]):
+    for pushed_at in (
+        "not a date", "2026-02-30T00:00:00Z", 1, ["2026-01-01"], {"date": "2026-01-01"},
+    ):
         output = io.StringIO()
         errors = io.StringIO()
         with mock.patch.object(verify_catalog, "repos", return_value=[

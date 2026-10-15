@@ -91,9 +91,13 @@ def main():
             problems.append(f"{repo}: no commits")
             print(f"STALE {repo} (no commits)")
             continue
+        if not isinstance(data["pushed_at"], str):
+            problems.append(f"{repo}: invalid push date")
+            print(f"ERROR {repo} (invalid push date)")
+            continue
         try:
             pushed = datetime.date.fromisoformat(data["pushed_at"][:10])
-        except (TypeError, ValueError):
+        except ValueError:
             problems.append(f"{repo}: invalid push date")
             print(f"ERROR {repo} (invalid push date)")
             continue
