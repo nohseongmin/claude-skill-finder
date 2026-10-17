@@ -8,6 +8,7 @@ Unauthenticated GitHub API allows 60 calls/hour, which covers the catalog. Set
 GITHUB_TOKEN to raise that when a shared IP has already spent the quota.
 """
 import datetime
+import http.client
 import json
 import os
 import pathlib
@@ -78,6 +79,10 @@ def main():
         except TimeoutError:
             problems.append(f"{repo}: timed out")
             print(f"ERROR {repo} (timed out)")
+            continue
+        except http.client.IncompleteRead:
+            problems.append(f"{repo}: incomplete response")
+            print(f"ERROR {repo} (incomplete response)")
             continue
         except (json.JSONDecodeError, UnicodeDecodeError):
             problems.append(f"{repo}: invalid JSON response")
