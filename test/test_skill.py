@@ -293,6 +293,35 @@ def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     assert "GitHub rate limit" not in errors.getvalue()
 
 
+def test_catalog_continues_after_unreadable_http_error():
+    """Reading an HTTP error body can fail just like reading a successful response."""
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    for failure in (TimeoutError("timed out"), http.client.IncompleteRead(b"partial", 1)):
+        output = io.StringIO()
+        errors = io.StringIO()
+        body = mock.MagicMock()
+        body.read.side_effect = failure
+        forbidden = urllib.error.HTTPError(
+            "https://api.github.com/repos/example/unreadable", 403, "Forbidden", {}, body,
+        )
+        with mock.patch.object(verify_catalog, "repos", return_value=[
+            ("example/unreadable", True), ("example/healthy", True),
+        ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+            forbidden, healthy,
+        ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            result = verify_catalog.main()
+        assert result == 1, "an unreadable error response must fail the catalog check"
+        assert fetch.call_args_list == [mock.call("example/unreadable"), mock.call("example/healthy")]
+        assert "ERROR example/unreadable (unreadable HTTP error response)" in output.getvalue()
+        assert "ok    example/healthy" in output.getvalue()
+        assert "DEAD" not in output.getvalue(), "an unreadable response is not proof a repo is dead"
+        assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_continues_after_empty_repository():
     """A repository without commits must fail cleanly without hiding later rows."""
     output = io.StringIO()

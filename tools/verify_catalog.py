@@ -54,12 +54,17 @@ def main():
             data = fetch(repo)
         except urllib.error.HTTPError as error:
             headers = error.headers or {}
-            is_rate_limited = (
-                error.code == 429
-                or headers.get("X-RateLimit-Remaining") == "0"
-                or headers.get("Retry-After") is not None
-                or (error.fp is not None and b"secondary rate limit" in error.read().lower())
-            )
+            try:
+                is_rate_limited = (
+                    error.code == 429
+                    or headers.get("X-RateLimit-Remaining") == "0"
+                    or headers.get("Retry-After") is not None
+                    or (error.fp is not None and b"secondary rate limit" in error.read().lower())
+                )
+            except (TimeoutError, http.client.IncompleteRead):
+                problems.append(f"{repo}: unreadable HTTP error response")
+                print(f"ERROR {repo} (unreadable HTTP error response)")
+                continue
             if is_rate_limited:
                 # Rate limited, not dead. Reporting these as dead rows would be a lie.
                 print(
