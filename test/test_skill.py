@@ -138,6 +138,32 @@ def test_catalog_continues_after_incomplete_response():
     assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_connection_reset():
+    """A reset while reading a response must not hide the remaining rows."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    interrupted = mock.MagicMock()
+    interrupted.__enter__.return_value = interrupted
+    interrupted.read.side_effect = ConnectionResetError("connection reset")
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/interrupted", True), ("example/healthy", True),
+    ]), mock.patch.object(verify_catalog.urllib.request, "urlopen", side_effect=[
+        interrupted, io.BytesIO(json.dumps(healthy).encode("utf-8")),
+    ]) as urlopen, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "a connection reset must fail the catalog check"
+    assert urlopen.call_count == 2, "the remaining rows must still be checked"
+    assert "ERROR example/interrupted (connection interrupted)" in output.getvalue()
+    assert "ok    example/healthy" in output.getvalue()
+    assert "DEAD" not in output.getvalue(), "a connection reset is not proof a repo is dead"
+    assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_continues_after_invalid_json():
     """A malformed API response must not prevent checking the remaining rows."""
     output = io.StringIO()
@@ -300,7 +326,10 @@ def test_catalog_continues_after_unreadable_http_error():
         "stargazers_count": 200,
         "license": {"spdx_id": "MIT"},
     }
-    for failure in (TimeoutError("timed out"), http.client.IncompleteRead(b"partial", 1)):
+    for failure in (
+        TimeoutError("timed out"), ConnectionResetError("connection reset"),
+        http.client.IncompleteRead(b"partial", 1),
+    ):
         output = io.StringIO()
         errors = io.StringIO()
         body = mock.MagicMock()
