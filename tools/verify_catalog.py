@@ -61,7 +61,7 @@ def main():
                     or headers.get("Retry-After") is not None
                     or (error.fp is not None and b"secondary rate limit" in error.read().lower())
                 )
-            except (TimeoutError, http.client.IncompleteRead):
+            except (TimeoutError, ConnectionError, http.client.IncompleteRead):
                 problems.append(f"{repo}: unreadable HTTP error response")
                 print(f"ERROR {repo} (unreadable HTTP error response)")
                 continue
@@ -84,6 +84,10 @@ def main():
         except TimeoutError:
             problems.append(f"{repo}: timed out")
             print(f"ERROR {repo} (timed out)")
+            continue
+        except ConnectionError:
+            problems.append(f"{repo}: connection interrupted")
+            print(f"ERROR {repo} (connection interrupted)")
             continue
         except http.client.IncompleteRead:
             problems.append(f"{repo}: incomplete response")
