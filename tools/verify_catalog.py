@@ -16,6 +16,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from http import HTTPStatus
 
 REFERENCES = pathlib.Path(__file__).resolve().parent.parent / "references"
 VENDOR_CATALOG = REFERENCES / "vendor-skills.md"
@@ -53,6 +54,11 @@ def main():
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:
+            if error.code >= HTTPStatus.INTERNAL_SERVER_ERROR:
+                error.close()
+                problems.append(f"{repo}: HTTP {error.code}")
+                print(f"ERROR {repo} (HTTP {error.code})")
+                continue
             headers = error.headers or {}
             try:
                 is_rate_limited = (
