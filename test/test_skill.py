@@ -290,6 +290,38 @@ def test_catalog_continues_after_invalid_star_count():
         assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_continues_after_server_error():
+    """A server outage is not a dead repository or proof of a rate limit."""
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    for code in (500, 502, 503, 504):
+        for headers in ({}, {"Retry-After": "60"}):
+            output = io.StringIO()
+            errors = io.StringIO()
+            body = io.BytesIO(b"server error")
+            unavailable = urllib.error.HTTPError(
+                "https://api.github.com/repos/example/unavailable",
+                code, "Server error", headers, body,
+            )
+            with mock.patch.object(verify_catalog, "repos", return_value=[
+                ("example/unavailable", True), ("example/healthy", True),
+            ]), mock.patch.object(verify_catalog, "fetch", side_effect=[
+                unavailable, healthy,
+            ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                result = verify_catalog.main()
+            assert result == 1, "a server error must fail the catalog check"
+            assert body.closed, "the server error response must be closed"
+            assert fetch.call_args_list == [mock.call("example/unavailable"), mock.call("example/healthy")]
+            assert f"ERROR example/unavailable (HTTP {code})" in output.getvalue()
+            assert "ok    example/healthy" in output.getvalue()
+            assert "DEAD" not in output.getvalue(), "a server error is not proof a repo is dead"
+            assert "GitHub rate limit" not in errors.getvalue()
+            assert "1 row(s) need attention" in errors.getvalue()
+
+
 def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()
