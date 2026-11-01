@@ -71,6 +71,8 @@ def main():
                 problems.append(f"{repo}: unreadable HTTP error response")
                 print(f"ERROR {repo} (unreadable HTTP error response)")
                 continue
+            finally:
+                error.close()
             if is_rate_limited:
                 # Rate limited, not dead. Reporting these as dead rows would be a lie.
                 print(

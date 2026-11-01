@@ -326,12 +326,13 @@ def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()
     errors = io.StringIO()
+    body = io.BytesIO(b"forbidden")
     forbidden = urllib.error.HTTPError(
         "https://api.github.com/repos/example/forbidden",
         403,
         "Forbidden",
         {"X-RateLimit-Remaining": "1"},
-        None,
+        body,
     )
     healthy = {
         "pushed_at": verify_catalog.datetime.date.today().isoformat(),
@@ -345,10 +346,37 @@ def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
         result = verify_catalog.main()
     assert result == 1, "an inaccessible catalog row must fail the catalog check"
+    assert body.closed, "the forbidden response must be closed"
     assert fetch.call_args_list == [mock.call("example/forbidden"), mock.call("example/healthy")]
     assert "DEAD  example/forbidden (HTTP 403)" in output.getvalue()
     assert "ok    example/healthy" in output.getvalue()
     assert "GitHub rate limit" not in errors.getvalue()
+
+
+def test_catalog_closes_rate_limit_responses():
+    """Both header and body rate-limit signals must release the response before exit."""
+    for code, headers, payload in (
+        (429, {}, b"too many requests"),
+        (403, {"X-RateLimit-Remaining": "0"}, b"rate limited"),
+        (403, {"Retry-After": "60"}, b"rate limited"),
+        (403, {}, b"secondary rate limit"),
+    ):
+        output = io.StringIO()
+        errors = io.StringIO()
+        body = io.BytesIO(payload)
+        limited = urllib.error.HTTPError(
+            "https://api.github.com/repos/example/limited", code, "Rate limited", headers, body,
+        )
+        with mock.patch.object(verify_catalog, "repos", return_value=[
+            ("example/limited", True),
+        ]), mock.patch.object(verify_catalog, "fetch", side_effect=limited) as fetch, \
+                contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            result = verify_catalog.main()
+        assert result == 2, "a rate limit must keep its distinct exit code"
+        assert body.closed, "the rate limit response must be closed"
+        fetch.assert_called_once_with("example/limited")
+        assert "GitHub rate limit" in errors.getvalue()
+        assert "DEAD" not in output.getvalue(), "a rate limit is not proof a repo is dead"
 
 
 def test_catalog_continues_after_unreadable_http_error():
@@ -376,6 +404,7 @@ def test_catalog_continues_after_unreadable_http_error():
         ]) as fetch, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
             result = verify_catalog.main()
         assert result == 1, "an unreadable error response must fail the catalog check"
+        body.close.assert_called_once_with()
         assert fetch.call_args_list == [mock.call("example/unreadable"), mock.call("example/healthy")]
         assert "ERROR example/unreadable (unreadable HTTP error response)" in output.getvalue()
         assert "ok    example/healthy" in output.getvalue()
