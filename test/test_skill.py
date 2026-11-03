@@ -322,6 +322,28 @@ def test_catalog_continues_after_server_error():
             assert "1 row(s) need attention" in errors.getvalue()
 
 
+def test_catalog_stops_after_authentication_failure():
+    """Invalid credentials must not label catalog rows as dead repositories."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    body = io.BytesIO(b"bad credentials")
+    unauthorized = urllib.error.HTTPError(
+        "https://api.github.com/repos/example/first", 401, "Unauthorized", {}, body,
+    )
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/first", True), ("example/second", True),
+    ]), mock.patch.object(verify_catalog, "fetch", side_effect=unauthorized) as fetch, \
+            contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 2, "an authentication failure must keep its distinct exit code"
+    assert body.closed, "the unauthorized response must be closed"
+    fetch.assert_called_once_with("example/first")
+    assert "GitHub authentication failed" in errors.getvalue()
+    assert "Check GITHUB_TOKEN" in errors.getvalue()
+    assert "DEAD" not in output.getvalue(), "invalid credentials are not proof a repo is dead"
+    assert "row(s) need attention" not in errors.getvalue()
+
+
 def test_catalog_does_not_mistake_forbidden_for_rate_limit():
     """A forbidden repository is a bad row unless GitHub says the quota is exhausted."""
     output = io.StringIO()
