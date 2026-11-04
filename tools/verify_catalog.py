@@ -54,6 +54,13 @@ def main():
         try:
             data = fetch(repo)
         except urllib.error.HTTPError as error:
+            if error.code == HTTPStatus.UNAUTHORIZED:
+                error.close()
+                print(
+                    f"gave up at {repo}: GitHub authentication failed. Check GITHUB_TOKEN and rerun.",
+                    file=sys.stderr,
+                )
+                return 2
             if error.code >= HTTPStatus.INTERNAL_SERVER_ERROR:
                 error.close()
                 problems.append(f"{repo}: HTTP {error.code}")
