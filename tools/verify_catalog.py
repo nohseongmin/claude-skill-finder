@@ -61,7 +61,7 @@ def main():
                     file=sys.stderr,
                 )
                 return 2
-            if error.code >= HTTPStatus.INTERNAL_SERVER_ERROR:
+            if error.code == HTTPStatus.REQUEST_TIMEOUT or error.code >= HTTPStatus.INTERNAL_SERVER_ERROR:
                 error.close()
                 problems.append(f"{repo}: HTTP {error.code}")
                 print(f"ERROR {repo} (HTTP {error.code})")
