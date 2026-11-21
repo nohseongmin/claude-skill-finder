@@ -5,6 +5,7 @@ import io
 import json
 import pathlib
 import re
+import ssl
 import sys
 import urllib.error
 from unittest import mock
@@ -161,6 +162,33 @@ def test_catalog_continues_after_connection_reset():
     assert "ERROR example/interrupted (connection interrupted)" in output.getvalue()
     assert "ok    example/healthy" in output.getvalue()
     assert "DEAD" not in output.getvalue(), "a connection reset is not proof a repo is dead"
+    assert "1 row(s) need attention" in errors.getvalue()
+
+
+def test_catalog_continues_after_tls_error():
+    """A TLS failure while reading a response must not hide the remaining rows."""
+    output = io.StringIO()
+    errors = io.StringIO()
+    healthy = {
+        "pushed_at": verify_catalog.datetime.date.today().isoformat(),
+        "stargazers_count": 200,
+        "license": {"spdx_id": "MIT"},
+    }
+    interrupted = mock.MagicMock()
+    interrupted.__enter__.return_value = interrupted
+    interrupted.read.side_effect = ssl.SSLError("decryption failed")
+    with mock.patch.object(verify_catalog, "repos", return_value=[
+        ("example/interrupted", True), ("example/healthy", True),
+    ]), mock.patch.object(verify_catalog.urllib.request, "urlopen", side_effect=[
+        interrupted, io.BytesIO(json.dumps(healthy).encode("utf-8")),
+    ]) as urlopen, contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+        result = verify_catalog.main()
+    assert result == 1, "a TLS error must fail the catalog check"
+    assert urlopen.call_count == 2, "the remaining rows must still be checked"
+    interrupted.__exit__.assert_called_once()
+    assert "ERROR example/interrupted (TLS error)" in output.getvalue()
+    assert "ok    example/healthy" in output.getvalue()
+    assert "DEAD" not in output.getvalue(), "a TLS error is not proof a repo is dead"
     assert "1 row(s) need attention" in errors.getvalue()
 
 
@@ -410,6 +438,7 @@ def test_catalog_continues_after_unreadable_http_error():
     }
     for failure in (
         TimeoutError("timed out"), ConnectionResetError("connection reset"),
+        ssl.SSLError("decryption failed"),
         http.client.IncompleteRead(b"partial", 1),
     ):
         output = io.StringIO()

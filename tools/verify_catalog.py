@@ -13,6 +13,7 @@ import json
 import os
 import pathlib
 import re
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -74,7 +75,7 @@ def main():
                     or headers.get("Retry-After") is not None
                     or (error.fp is not None and b"secondary rate limit" in error.read().lower())
                 )
-            except (TimeoutError, ConnectionError, http.client.IncompleteRead):
+            except (TimeoutError, ConnectionError, ssl.SSLError, http.client.IncompleteRead):
                 problems.append(f"{repo}: unreadable HTTP error response")
                 print(f"ERROR {repo} (unreadable HTTP error response)")
                 continue
@@ -103,6 +104,10 @@ def main():
         except ConnectionError:
             problems.append(f"{repo}: connection interrupted")
             print(f"ERROR {repo} (connection interrupted)")
+            continue
+        except ssl.SSLError:
+            problems.append(f"{repo}: TLS error")
+            print(f"ERROR {repo} (TLS error)")
             continue
         except http.client.IncompleteRead:
             problems.append(f"{repo}: incomplete response")
